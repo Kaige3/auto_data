@@ -1,0 +1,40 @@
+# --- 必须屏蔽的大文件和目录 ---
+# 忽略 PyInstaller 编译生成的目录
+order_calc_web/build/
+order_calc_web/dist/
+
+# 忽略根目录及子目录下的所有压缩包
+*.zip
+*.7z
+*.rar
+*.tar.gz
+
+# 数据库
+order_calc_web/database/
+
+# 脚本
+sql_script/
+# 忽略所有可执行文件
+*.exe
+
+# 忽略所有可执行文件
+*.exe
+
+# --- 其他建议屏蔽的内容 ---
+# 忽略 Python 缓存
+__pycache__/
+*.pyc
+
+# 忽略虚拟环境
+.venv/
+venv/
+ENV/
+
+# 忽略日志文件和本地数据库备份（如果有的话）
+order_calc_web/logs/
+order_calc_web/history_data/
+*.log
+*.sqlite3
+
+# 忽略临时上传的原始数据
+order_calc_web/raw_uploads/

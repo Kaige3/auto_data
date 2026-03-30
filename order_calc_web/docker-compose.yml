@@ -1,0 +1,16 @@
+services:
+  order_calc_web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: order_calc_web
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./database:/app/database
+      - ./history_data:/app/history_data
+      - ./raw_uploads:/app/raw_uploads
+      - ./snapshots:/app/snapshots
+    environment:
+      - TZ=Asia/Shanghai

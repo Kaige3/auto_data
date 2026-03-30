@@ -1,0 +1,233 @@
+:root {
+    /* 深色模式色彩变量 */
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: rgba(59, 130, 246, 0.15);
+    --secondary: #94a3b8;
+    --success: #10b981;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    
+    /* 背景与边框 */
+    --bg: #0f172a;          /* 页面底层深色 */
+    --card-bg: #1e293b;     /* 卡片层深色 */
+    --border: #334155;      /* 分割线颜色 */
+    
+    /* 文本颜色 */
+    --text-main: #f8fafc;   /* 极高对比度，用于标题和主数据 */
+    --text-sub: #cbd5e1;    /* 中高对比度，用于普通文本 */
+    
+    --sidebar-width: 300px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    background-color: var(--bg); 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text-main);
+    line-height: 1.5;
+    height: 100vh;
+    overflow: hidden; 
+}
+
+/* 布局容器 */
+.app-container {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    height: 100vh;
+    transition: all 0.3s ease;
+}
+
+/* 左侧边栏 - 控制区 */
+.sidebar {
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+    z-index: 10;
+    transition: transform 0.3s ease;
+}
+
+/* 滚动条深色美化 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+.brand h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.brand-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--primary), #60a5fa);
+    color: white;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.group-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 输入控件样式优化 */
+label { font-size: 14px; color: var(--text-sub); display: block; margin-bottom: 6px; font-weight: 500; }
+
+.input-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    transition: all 0.2s;
+}
+.input-box:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    background: #111827;
+}
+
+select, input[type="date"], input[type="file"] { 
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text-main);
+    outline: none;
+}
+
+/* 下拉菜单内的选项在部分浏览器中需要强制底色 */
+select option { background: var(--card-bg); color: var(--text-main); }
+
+input[type="file"]::file-selector-button {
+    background: var(--primary-light);
+    color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-right: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+input[type="file"]::file-selector-button:hover {
+    background: rgba(59, 130, 246, 0.25);
+}
+
+/* Radio Group */
+.radio-group {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+.radio-option {
+    flex: 1;
+    position: relative;
+}
+.radio-option input {
+    position: absolute;
+    opacity: 0;
+    width: 100%; height: 100%;
+    cursor: pointer;
+}
+.radio-label {
+    display: block;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--secondary);
+    transition: all 0.2s;
+}
+.radio-option input:checked + .radio-label {
+    background: var(--card-bg);
+    color: #60a5fa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-weight: 600;
+    border: 1px solid #3b82f6;
+}
+
+.btn-primary { 
+    width: 100%;
+    background: var(--primary); 
+    color: white; 
+    border: none; 
+    padding: 12px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: 0.2s; 
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+.btn-primary:hover { background: #4f46e5; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { background: var(--border); color: var(--secondary); box-shadow: none; cursor: not-allowed; }
+
+.nav-item {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+}
+.nav-item.active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+/* 右侧内容区 */
+.main-content {
+    padding: 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* 响应式调整 */
+@media (max-width: 1024px) {
+    .app-container { grid-template-columns: 1fr; overflow: auto; height: auto; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); padding: 16px; }
+    .main-content { padding: 16px; overflow: visible; height: auto; }
+}
+
+#loading-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.85); /* 深色毛玻璃 */
+    display: none; justify-content: center; align-items: center;
+    z-index: 100; flex-direction: column; gap: 16px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+.spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

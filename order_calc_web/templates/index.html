@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>电商报表自动化中心 · 深度分析</title>
+    <!-- 引入样式表 -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<div class="app-container" style="display: grid; opacity: 1;">
+    <!-- 左侧边栏 -->
+    <aside class="sidebar" id="sidebar-left">
+        <div class="brand">
+            <div class="brand-icon">A</div>
+            <div>
+                <h1>义选电商数算中心beta</h1>
+                <div style="font-size: 12px; color: var(--secondary);">AI 数据分析引擎</div>
+            </div>
+        </div>
+
+        <nav class="module-nav" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+            <div class="group-title">业务中心</div>
+            <button class="nav-item active" data-target="order-analysis" style="text-align:left;">📦 订单退款分析</button>
+            <button class="nav-item" data-target="media-crawler" style="text-align:left;">🎥 素材采集中心</button>
+            <button class="nav-item" data-target="data-dashboard" style="text-align:left;">📊 全局数据大盘</button>
+        </nav>
+
+        <div class="control-group">
+            <div class="group-title">1. 数据源设置</div>
+            <div>
+                <label>选择平台</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="platform" value="douyin" id="plat_douyin">
+                        <span class="radio-label">抖音小店</span>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="platform" value="channels" id="plat_channels">
+                        <span class="radio-label">视频号</span>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="platform" value="pinduoduo" id="plat_pinduoduo">
+                        <span class="radio-label">拼多多</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="shop-select-container" style="display: none; margin-top: 15px;">
+                <label>选择店铺</label>
+                <div class="input-box">
+                    <select id="shopSelect">
+                        <option value="">请选择店铺...</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label>上传报表文件</label>
+                <div class="input-box">
+                    <input type="file" id="fileInput" accept=".csv, .xlsx, .xls">
+                </div>
+                <div style="font-size: 12px; color: var(--secondary); margin-top: 4px;">支持 .xlsx, .csv 格式</div>
+            </div>
+            <button class="btn-primary" id="uploadBtn">
+                <span>⚡ 开始智能分析</span>
+            </button>
+            <button class="btn-primary" id="manageBatchesBtn" style="background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); margin-top: 10px;">
+                <span>🗑️ 管理上传记录</span>
+            </button>
+        </div>
+        
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--secondary); text-align: center;">
+            &copy; 2026 义选电商-效率大队<br>Ver 1.0.0
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <section id="order-analysis" class="biz-module">
+        <!-- 昨日发前退款率聚合表视图 -->
+        <div id="yesterday-summary-view" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                <h2 style="margin: 0; color: var(--text-main);">📅 昨日发前退款率聚合报表</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="date" id="yesterdayDateInput" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main);">
+                    <button id="exportYesterdayBtn" class="btn-primary" style="background-color: #10b981; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
+                        <span>📥 导出该表</span>
+                    </button>
+                </div>
+            </div>
+            <div id="yesterdayTableContainer" style="overflow-x: auto; background: #fff; border: 1px solid #000;">
+                <!-- Yesterday table will be injected here -->
+            </div>
+        </div>
+
+        <div id="global-table-view" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                <h2 style="margin: 0; color: var(--text-main);">🌐 全平台店铺数据总览</h2>
+                <button id="exportGlobalBtn" class="btn-primary" style="background-color: #10b981; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
+                    <span>📥 导出 Excel</span>
+                </button>
+            </div>
+            
+            <div id="globalTableContainer" style="display: flex; flex-direction: column; gap: 40px; overflow-y: auto; padding-right: 10px;">
+                <!-- Tables will be injected here -->
+            </div>
+        </div>
+        </section>
+
+        <section id="media-crawler" class="biz-module" style="display:none;">
+            <div style="padding:16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
+                    <h2 style="margin: 0; color: var(--text-main);">🎥 素材采集中心</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="syncFeishuBtn" class="btn-primary" style="background-color: #10b981; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
+                            <span>🚀 批量同步到飞书</span>
+                        </button>
+                        <button id="refreshCrawlerBtn" class="btn-primary" style="background-color: #3b82f6; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
+                            <span>🔄 刷新数据</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="crawlerTableContainer" style="overflow-x: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
+                    <!-- Crawler table will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <section id="data-dashboard" class="biz-module" style="display:none;">
+            <div style="padding:16px;">
+                <h2>全局数据大盘</h2>
+                <p>这里将展示趋势图与指标卡。</p>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="color: var(--text-main); font-weight: 500; font-size: 16px; letter-spacing: 1px;">AI 引擎正在分析数据...</div>
+</div>
+
+<!-- 批量管理模态框 -->
+<div id="batchesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: var(--card-bg); width: 600px; max-height: 80vh; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 4px 24px rgba(0,0,0,0.2);">
+        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: var(--text-main);">🗑️ 管理上传批次记录</h3>
+            <button id="closeBatchesModal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--secondary);">&times;</button>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex: 1;">
+            <p style="font-size: 13px; color: var(--secondary); margin-top: 0; margin-bottom: 15px;">勾选您要删除的上传记录，删除后该批次对应的明细数据和统计快照将被彻底清除。</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="background: var(--bg-main); text-align: left;">
+                        <th style="padding: 8px; border-bottom: 1px solid var(--border); width: 40px;"><input type="checkbox" id="selectAllBatches"></th>
+                        <th style="padding: 8px; border-bottom: 1px solid var(--border);">上传时间 (批次号)</th>
+                        <th style="padding: 8px; border-bottom: 1px solid var(--border);">店铺</th>
+                        <th style="padding: 8px; border-bottom: 1px solid var(--border);">包含天数</th>
+                    </tr>
+                </thead>
+                <tbody id="batchesTableBody">
+                    <!-- JS 渲染 -->
+                </tbody>
+            </table>
+        </div>
+        <div style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
+            <button id="cancelBatchesBtn" style="padding: 6px 16px; border: 1px solid var(--border); background: transparent; border-radius: 4px; cursor: pointer;">取消</button>
+            <button id="deleteSelectedBatchesBtn" class="btn-primary" style="background-color: #ef4444; width: auto; padding: 6px 16px; border-radius: 4px;">删除选中批次</button>
+        </div>
+    </div>
+</div>
+
+<!-- 引入 JS 模块 -->
+<script type="module" src="/static/js/main.js"></script>
+
+</body>
+</html>
