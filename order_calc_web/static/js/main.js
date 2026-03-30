@@ -266,10 +266,10 @@ function bindEvents() {
                 return '<span style="color: transparent;">-</span>'; // 占位保持高度一致
             };
 
-            // 计算ROI类差异指标 (大于0绿，小于0红)
+            // 计算ROI类差异指标 (大于0红，小于0绿)
             const renderRoiIndicator = (diff) => {
-                if (diff > 0) return `<span style="color: #10b981;">↑ ${formatValue(diff)}</span>`;
-                if (diff < 0) return `<span style="color: #ef4444;">↓ ${formatValue(Math.abs(diff))}</span>`;
+                if (diff > 0) return `<span style="color: #ef4444;">↑ ${formatValue(diff)}</span>`;
+                if (diff < 0) return `<span style="color: #10b981;">↓ ${formatValue(Math.abs(diff))}</span>`;
                 return '<span style="color: transparent;">-</span>'; // 占位保持高度一致
             };
 
