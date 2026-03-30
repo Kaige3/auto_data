@@ -6,7 +6,7 @@ let currentGlobalData = [];
 
 // --- 常量与 DOM 元素 ---
 const SHOP_MAPPING = {
-    douyin: ['唐造女装', 'JOJO', '蕉卜'],
+    douyin: ['唐造女装', 'JOJO', '蕉卜', '唐造网宏女装'],
     channels: ['佑砺','一亦','俊熙'],
     pinduoduo: ['午后写生旗舰店', '蕉卜旗舰店']
 };
