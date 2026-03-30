@@ -129,48 +129,55 @@
                         </button>
                     </div>
                     
-                    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <span style="font-size: 13px; color: var(--secondary); display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                            对比基准(旧) 
-                            <span title="作为对比基准的历史数据批次" style="cursor: help; color: #3b82f6; font-size: 12px; border: 1px solid #3b82f6; border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;">?</span>
-                            ：
-                        </span>
-                        <select id="qianchuanPrevBatchSelect" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 13px; min-width: 180px; max-width: 250px;">
-                            <option value="">暂无数据</option>
-                        </select>
-
-                        <span style="color: var(--secondary); margin: 0 5px;">VS</span>
-                        <span style="font-size: 13px; color: var(--secondary); display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                            当前选择(新) 
-                            <span title="当前需要查看和计算的数据批次" style="cursor: help; color: #3b82f6; font-size: 12px; border: 1px solid #3b82f6; border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;">?</span>
-                            ：
-                        </span>
-                        <select id="qianchuanBatchSelect" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 13px; min-width: 180px; max-width: 250px;">
-                            <option value="">暂无数据</option>
-                        </select>
-                        <button id="deleteQianchuanBatchBtn" class="btn-primary" style="background-color: transparent; border: 1px solid var(--border); color: #ef4444; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1; display: none; white-space: nowrap;">
-                            <span>🗑️ 删除该批次</span>
-                        </button>
+                    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end; min-width: 60%;">
+                        <div style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 250px; max-width: 600px;">
+                            <span style="font-size: 13px; color: var(--secondary); white-space: nowrap; display: flex; align-items: center; gap: 4px;">
+                                对比基准(旧) 
+                                <span title="作为对比基准的历史数据批次" style="cursor: help; color: #3b82f6; font-size: 12px; border: 1px solid #3b82f6; border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;">?</span>
+                                ：
+                            </span>
+                            <select id="qianchuanPrevBatchSelect" style="padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 13px; width: 100%; text-overflow: ellipsis; cursor: pointer;">
+                                <option value="">暂无数据</option>
+                            </select>
+                        </div>
+                        
+                        <span style="color: var(--secondary); font-weight: bold; padding: 0 4px; flex-shrink: 0;">VS</span>
+                        
+                        <div style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 250px; max-width: 600px;">
+                            <span style="font-size: 13px; color: var(--secondary); white-space: nowrap; display: flex; align-items: center; gap: 4px;">
+                                当前选择(新) 
+                                <span title="当前需要查看和计算的数据批次" style="cursor: help; color: #3b82f6; font-size: 12px; border: 1px solid #3b82f6; border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;">?</span>
+                                ：
+                            </span>
+                            <select id="qianchuanBatchSelect" style="padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 13px; width: 100%; text-overflow: ellipsis; cursor: pointer;">
+                                <option value="">暂无数据</option>
+                            </select>
+                            <button id="deleteQianchuanBatchBtn" class="btn-primary" style="background-color: transparent; border: 1px solid var(--border); color: #ef4444; width: 32px; padding: 0; font-size: 14px; height: 32px; border-radius: 4px; display: none; flex-shrink: 0; align-items: center; justify-content: center;" title="删除该批次">
+                                <span>🗑️</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div id="qianchuanTableContainer" style="overflow-x: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
                     <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;">
                         <colgroup>
-                            <col style="width: 15%;"> <!-- 素材ID -->
-                            <col style="width: 25%;"> <!-- 素材名称 -->
-                            <col style="width: 15%;"> <!-- 标签 -->
-                            <col style="width: 9%;">  <!-- 整体消耗 -->
-                            <col style="width: 9%;">  <!-- 基础消耗 -->
-                            <col style="width: 9%;">  <!-- 追投调控消耗 -->
-                            <col style="width: 9%;">  <!-- 追投调控支付ROI -->
-                            <col style="width: 9%;">  <!-- 整体支付ROI -->
+                            <col style="width: 12%;"> <!-- 素材ID -->
+                            <col style="width: 20%;"> <!-- 素材名称 -->
+                            <col style="width: 10%;"> <!-- 标签 -->
+                            <col style="width: 10%;"> <!-- 素材创建时间 -->
+                            <col style="width: 8%;">  <!-- 整体消耗 -->
+                            <col style="width: 8%;">  <!-- 基础消耗 -->
+                            <col style="width: 8%;">  <!-- 追投调控消耗 -->
+                            <col style="width: 8%;">  <!-- 追投调控支付ROI -->
+                            <col style="width: 8%;">  <!-- 整体支付ROI -->
                         </colgroup>
                         <thead>
                             <tr style="background-color: var(--bg-main);">
                                 <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">素材ID</th>
                                 <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">素材名称</th>
                                 <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">标签</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600; cursor: pointer; user-select: none;" class="sortable-col" data-sort="material_create_time">创建时间 <span class="sort-icon" style="color: var(--secondary); font-size: 10px;"></span></th>
                                 <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600; cursor: pointer; user-select: none;" class="sortable-col" data-sort="current_total_cost">整体消耗 <span class="sort-icon" style="color: var(--secondary); font-size: 10px;"></span></th>
                                 <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600; cursor: pointer; user-select: none;" class="sortable-col" data-sort="current_basic_cost">基础消耗 <span class="sort-icon" style="color: var(--secondary); font-size: 10px;"></span></th>
                                 <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600; cursor: pointer; user-select: none;" class="sortable-col" data-sort="current_additional_cost">追投调控消耗 <span class="sort-icon" style="color: var(--secondary); font-size: 10px;"></span></th>
@@ -180,7 +187,7 @@
                         </thead>
                         <tbody id="qianchuanTableBody">
                             <!-- Data will be injected here -->
-                            <tr><td colspan="8" style="text-align:center; padding: 20px; color: var(--secondary);">暂无数据，请上传最新批次或进行查询</td></tr>
+                            <tr><td colspan="9" style="text-align:center; padding: 20px; color: var(--secondary);">暂无数据，请上传最新批次或进行查询</td></tr>
                         </tbody>
                     </table>
                 </div>

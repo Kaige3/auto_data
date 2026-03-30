@@ -224,8 +224,18 @@ function bindEvents() {
 
         // 排序逻辑
         data.sort((a, b) => {
-            const valA = a[currentSortColumn] || 0;
-            const valB = b[currentSortColumn] || 0;
+            const valA = a[currentSortColumn] || (currentSortColumn === 'material_create_time' ? '' : 0);
+            const valB = b[currentSortColumn] || (currentSortColumn === 'material_create_time' ? '' : 0);
+            
+            // 对时间字符串进行特殊排序处理
+            if (currentSortColumn === 'material_create_time') {
+                if (currentSortOrder === 'asc') {
+                    return String(valA).localeCompare(String(valB));
+                } else {
+                    return String(valB).localeCompare(String(valA));
+                }
+            }
+            
             if (currentSortOrder === 'asc') {
                 return valA - valB;
             } else {
@@ -268,6 +278,7 @@ function bindEvents() {
                     <td style="padding: 12px 8px; word-break: break-all; color: var(--secondary); font-family: monospace;">${item.material_id}</td>
                     <td style="padding: 12px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.material_name}">${item.material_name}</td>
                     <td style="padding: 12px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--secondary);" title="${item.tags}">${item.tags || '-'}</td>
+                    <td style="padding: 12px 8px; font-size: 12px; color: var(--secondary);">${item.material_create_time || '-'}</td>
                     <td style="padding: 12px 8px;">
                         <div style="display: flex; flex-direction: column; gap: 4px;">
                             <span>${formatValue(item.current_total_cost)}</span>
