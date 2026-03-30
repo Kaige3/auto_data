@@ -94,6 +94,7 @@ class DataEngine:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     batch_id TEXT,        -- 每次上传的唯一批次号
                     upload_time DATETIME, -- 上传入库时间，用于时间线对比
+                    original_filename TEXT, -- 原始文件名
                     material_name TEXT,   -- 素材名称
                     material_id TEXT,     -- 素材ID (核心索引)
                     material_eval TEXT,   -- 素材评估
@@ -108,6 +109,12 @@ class DataEngine:
                     total_roi REAL        -- 整体支付ROI
                 )
             """)
+            
+            cursor.execute("PRAGMA table_info(material_reports)")
+            mat_columns = [col[1] for col in cursor.fetchall()]
+            if 'original_filename' not in mat_columns:
+                conn.execute("ALTER TABLE material_reports ADD COLUMN original_filename TEXT")
+
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_material_reports_id_time 
                 ON material_reports (material_id, upload_time DESC)
@@ -280,7 +287,7 @@ class DataEngine:
         """
         conn.execute(sql, (shop_name, batch_id, stat_date, batch_id))
 
-    def insert_material_report(self, df, batch_id):
+    def insert_material_report(self, df, batch_id, filename=""):
         """导入千川素材报表数据"""
         upload_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
@@ -298,6 +305,7 @@ class DataEngine:
             records.append((
                 batch_id,
                 upload_time,
+                filename,
                 str(row.get('素材名称', '')),
                 str(row.get('素材ID', '')),
                 str(row.get('素材评估', '')),
@@ -315,18 +323,18 @@ class DataEngine:
         with sqlite3.connect(self.db_path) as conn:
             conn.executemany("""
                 INSERT INTO material_reports (
-                    batch_id, upload_time, material_name, material_id, material_eval,
+                    batch_id, upload_time, original_filename, material_name, material_id, material_eval,
                     material_duration, material_create_time, material_source, tags,
                     total_cost, basic_cost, additional_cost, additional_roi, total_roi
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, records)
 
     def get_material_diff(self, search_kw=None, target_batch=None):
-        """查询千川素材指定批次（或最新批次）与当日上一个批次的差异"""
+        """查询千川素材指定批次（或最新批次）与全局时间线上的前一个批次的差异"""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             
-            # 1. 确定要查询的目标批次和该批次的上传时间
+            # 1. 确定要查询的“当前”目标批次
             if not target_batch:
                 cursor = conn.execute("SELECT batch_id, upload_time FROM material_reports ORDER BY upload_time DESC LIMIT 1")
                 row = cursor.fetchone()
@@ -342,18 +350,14 @@ class DataEngine:
                     return []
                 target_time = row['upload_time']
 
-            # 获取该批次对应的日期前缀 (YYYY-MM-DD)
-            target_date = target_time[:10]
-
-            # 2. 查询目标批次数据，并通过窗口函数获取每个素材ID的当日上一次数据
-            # 增加条件：只在当日（DATE(upload_time) = target_date）的数据内进行排名对比
+            # 2. 自动寻找上一次（无视日期限制，只看全局时间线上的前一次）
             query = """
                 WITH RankedData AS (
                     SELECT 
                         *,
                         ROW_NUMBER() OVER(PARTITION BY material_id ORDER BY upload_time DESC) as rn
                     FROM material_reports
-                    WHERE upload_time <= ? AND date(upload_time) = ?
+                    WHERE upload_time <= ?
                 ),
                 CurrentData AS (
                     SELECT * FROM RankedData WHERE rn = 1 AND batch_id = ?
@@ -385,7 +389,7 @@ class DataEngine:
                 LEFT JOIN PreviousData p ON c.material_id = p.material_id
                 WHERE 1=1
             """
-            params = [target_time, target_date, latest_batch]
+            params = [target_time, latest_batch]
             
             if search_kw:
                 query += " AND (c.material_name LIKE ? OR c.material_id LIKE ?)"
@@ -412,6 +416,7 @@ class DataEngine:
                     'current_total_roi': round(r['current_total_roi'] or 0, 2),
                     'diff_total_roi': round(r['diff_total_roi'] or 0, 2)
                 })
+
             return {'latest_batch': latest_batch, 'data': results}
 
     def get_qianchuan_batches(self):
@@ -419,7 +424,7 @@ class DataEngine:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute("""
-                SELECT batch_id, MAX(upload_time) as upload_time, COUNT(1) as record_count 
+                SELECT batch_id, MAX(upload_time) as upload_time, MAX(original_filename) as filename, COUNT(1) as record_count 
                 FROM material_reports 
                 GROUP BY batch_id 
                 ORDER BY upload_time DESC

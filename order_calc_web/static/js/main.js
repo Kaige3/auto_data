@@ -199,13 +199,14 @@ function bindEvents() {
     const qianchuanSearchInput = document.getElementById('qianchuanSearchInput');
     const qianchuanTableBody = document.getElementById('qianchuanTableBody');
     const qianchuanBatchSelect = document.getElementById('qianchuanBatchSelect');
+    const qianchuanPrevBatchSelect = document.getElementById('qianchuanPrevBatchSelect');
     const deleteQianchuanBatchBtn = document.getElementById('deleteQianchuanBatchBtn');
 
     let currentQianchuanData = [];
     let currentSortColumn = 'current_total_cost'; // 默认按整体消耗排序
     let currentSortOrder = 'desc'; // 默认降序
 
-    const renderQianchuanTable = (data, latestBatch) => {
+    const renderQianchuanTable = (data, latestBatch, prevBatch) => {
         if (!data || data.length === 0) {
             qianchuanTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px; color: var(--secondary);">暂无数据</td></tr>';
             if (deleteQianchuanBatchBtn) deleteQianchuanBatchBtn.style.display = 'none';
@@ -215,6 +216,10 @@ function bindEvents() {
         if (qianchuanBatchSelect && latestBatch) {
             qianchuanBatchSelect.value = latestBatch;
             if (deleteQianchuanBatchBtn) deleteQianchuanBatchBtn.style.display = 'block';
+        }
+        
+        if (qianchuanPrevBatchSelect) {
+            qianchuanPrevBatchSelect.value = prevBatch || '';
         }
 
         // 排序逻辑
@@ -307,7 +312,7 @@ function bindEvents() {
             const res = await fetchQianchuanDiff(keyword, batchId);
             if (res.status === 'success') {
                 currentQianchuanData = res.data;
-                renderQianchuanTable(currentQianchuanData, res.latest_batch);
+                renderQianchuanTable(currentQianchuanData, res.latest_batch, res.prev_batch);
             } else {
                 alert('查询失败: ' + res.msg);
             }
@@ -334,7 +339,8 @@ function bindEvents() {
             if (currentQianchuanData && currentQianchuanData.length > 0) {
                 // 仅重新渲染表格（不用重新请求数据）
                 const batchId = qianchuanBatchSelect ? qianchuanBatchSelect.value : '';
-                renderQianchuanTable(currentQianchuanData, batchId);
+                const prevBatchId = qianchuanPrevBatchSelect ? qianchuanPrevBatchSelect.value : '';
+                renderQianchuanTable(currentQianchuanData, batchId, prevBatchId);
             }
         });
     });
@@ -346,8 +352,6 @@ function bindEvents() {
             if (res.status === 'success' && res.data && res.data.length > 0) {
                 let optionsHtml = '';
                 
-                // 按日期对批次进行分组
-                const batchesByDate = {};
                 res.data.forEach(batch => {
                     const tsMatch = batch.batch_id.match(/qc_(\d+)/);
                     let dateStr = '未知日期';
@@ -355,27 +359,25 @@ function bindEvents() {
                     if (tsMatch) {
                         const date = new Date(parseInt(tsMatch[1]) * 1000);
                         dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`;
-                        displayTime = date.toLocaleString();
+                        displayTime = date.toLocaleTimeString();
                     }
-                    if (!batchesByDate[dateStr]) batchesByDate[dateStr] = [];
-                    batchesByDate[dateStr].push({ ...batch, displayTime });
+                    
+                    // 构造展示名称: 原始文件名 + 上传时间
+                    const fileName = batch.filename ? batch.filename.replace(/\.[^/.]+$/, "") : "未命名文件";
+                    const displayName = `${fileName} (${dateStr} ${displayTime})`;
+                    
+                    optionsHtml += `<option value="${batch.batch_id}">${displayName}</option>`;
                 });
 
-                // 遍历日期分组生成 optgroup
-                for (const [dateStr, batches] of Object.entries(batchesByDate)) {
-                    optionsHtml += `<optgroup label="${dateStr}">`;
-                    // 每天内的批次是按时间倒序的（最新在前面）
-                    batches.forEach((batch, index) => {
-                        // 计算当天是第几次上传 (总数 - 当前索引)
-                        const uploadCount = batches.length - index;
-                        optionsHtml += `<option value="${batch.batch_id}">第 ${uploadCount} 次上传 (${batch.displayTime})</option>`;
-                    });
-                    optionsHtml += `</optgroup>`;
-                }
-                
                 qianchuanBatchSelect.innerHTML = optionsHtml;
+                if (qianchuanPrevBatchSelect) {
+                    qianchuanPrevBatchSelect.innerHTML = `<option value="">(无前置对比基准)</option>` + optionsHtml;
+                }
             } else {
-                qianchuanBatchSelect.innerHTML = '<option value="">暂无历史批次</option>';
+                qianchuanBatchSelect.innerHTML = '<option value="">暂无数据</option>';
+                if (qianchuanPrevBatchSelect) {
+                    qianchuanPrevBatchSelect.innerHTML = '<option value="">暂无数据</option>';
+                }
             }
         } catch (e) {
             console.error("加载批次列表失败", e);

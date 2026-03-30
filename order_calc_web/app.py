@@ -514,7 +514,7 @@ def upload_qianchuan():
 
         # 生成批次号并入库
         batch_id = f"qc_{int(time.time())}"
-        engine.insert_material_report(df, batch_id)
+        engine.insert_material_report(df, batch_id, file.filename)
 
         return jsonify({
             'status': 'success',
