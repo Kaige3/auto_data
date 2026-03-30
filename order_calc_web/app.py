@@ -21,17 +21,11 @@ app = Flask(__name__)
 # 初始化 DataEngine
 engine = DataEngine()
 
-# 配置历史记录存储目录 (准备废弃或改为只存原始文件)
-HISTORY_DIR = os.path.join(app.root_path, 'history_data')
+# 配置历史记录存储目录
 SNAPSHOT_DIR = os.path.join(app.root_path, 'snapshots')
-RAW_UPLOADS_DIR = os.path.join(app.root_path, 'raw_uploads')
 
-if not os.path.exists(HISTORY_DIR):
-    os.makedirs(HISTORY_DIR)
 if not os.path.exists(SNAPSHOT_DIR):
     os.makedirs(SNAPSHOT_DIR)
-if not os.path.exists(RAW_UPLOADS_DIR):
-    os.makedirs(RAW_UPLOADS_DIR)
 
 # --- 配置日志系统 ---
 LOG_DIR = os.path.join(app.root_path, 'logs')

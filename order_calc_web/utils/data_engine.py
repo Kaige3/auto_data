@@ -5,8 +5,13 @@ import os
 from datetime import datetime
 
 class DataEngine:
-    def __init__(self, db_path="d:/auto_data/order_calc_web/database/order_system.db"):
-        self.db_path = db_path
+    def __init__(self, db_path=None):
+        if db_path is None:
+            # 默认将数据库放在项目根目录下的 database 文件夹中
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.db_path = os.path.join(base_dir, "database", "order_system.db")
+        else:
+            self.db_path = db_path
         # 确保数据库目录存在
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
