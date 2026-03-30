@@ -430,8 +430,16 @@ class DataEngine:
                 params = [target_time, latest_batch]
             
             if search_kw:
-                query += " AND (c.material_name LIKE ? OR c.material_id LIKE ?)"
-                params.extend([f"%{search_kw}%", f"%{search_kw}%"])
+                # 支持中英文逗号及换行分割的多个查询词
+                cleaned_kw = search_kw.replace('，', ',').replace('\n', ',').replace('\r', ',')
+                kw_list = [k.strip() for k in cleaned_kw.split(',') if k.strip()]
+                
+                if kw_list:
+                    conditions = []
+                    for kw in kw_list:
+                        conditions.append("(c.material_name LIKE ? OR c.material_id LIKE ?)")
+                        params.extend([f"%{kw}%", f"%{kw}%"])
+                    query += " AND (" + " OR ".join(conditions) + ")"
                 
             query += " ORDER BY c.total_cost DESC"
             

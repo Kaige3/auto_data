@@ -451,6 +451,22 @@ function bindEvents() {
                 loadQianchuanDiff();
             }
         });
+
+        // 拦截粘贴事件，将多行文本替换为逗号，支持批量ID搜索
+        qianchuanSearchInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            let paste = (e.clipboardData || window.clipboardData).getData('text');
+            if (paste) {
+                // 将换行符统一替换为英文逗号，并清理多余的空格
+                paste = paste.replace(/[\r\n]+/g, ',');
+                const start = qianchuanSearchInput.selectionStart;
+                const end = qianchuanSearchInput.selectionEnd;
+                const text = qianchuanSearchInput.value;
+                qianchuanSearchInput.value = text.slice(0, start) + paste + text.slice(end);
+                // 恢复光标位置
+                qianchuanSearchInput.selectionStart = qianchuanSearchInput.selectionEnd = start + paste.length;
+            }
+        });
     }
 
     if (uploadQianchuanBtn) {
