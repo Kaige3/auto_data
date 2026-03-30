@@ -37,12 +37,29 @@ export async function uploadQianchuanData(file) {
     return await response.json();
 }
 
-export async function fetchQianchuanDiff(keyword = '') {
+export async function fetchQianchuanDiff(keyword = '', batchId = '') {
     const params = new URLSearchParams({ t: Date.now() });
     if (keyword) {
         params.append('keyword', keyword);
     }
+    if (batchId) {
+        params.append('batch_id', batchId);
+    }
     const response = await fetch(`/api/qianchuan_diff?${params.toString()}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+}
+
+export async function fetchQianchuanBatches() {
+    const response = await fetch(`/api/qianchuan_batches?t=${Date.now()}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+}
+
+export async function deleteQianchuanBatch(batchId) {
+    const response = await fetch(`/api/qianchuan_batches/${batchId}`, {
+        method: 'DELETE'
+    });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return await response.json();
 }

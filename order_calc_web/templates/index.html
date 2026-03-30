@@ -121,12 +121,27 @@
                     </div>
                 </div>
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 16px; align-items: center;">
-                    <input type="file" id="qianchuanFileInput" accept=".csv, .xlsx, .xls" style="font-size: 13px; color: var(--secondary);">
-                    <button id="uploadQianchuanBtn" class="btn-primary" style="background-color: #10b981; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
-                        <span>📤 上传最新批次并计算</span>
-                    </button>
-                    <span id="qianchuanBatchInfo" style="margin-left: auto; font-size: 13px; color: var(--secondary); font-weight: 500;"></span>
+                <div style="display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                        <input type="file" id="qianchuanFileInput" accept=".csv, .xlsx, .xls" style="font-size: 13px; color: var(--secondary); max-width: 200px;">
+                        <button id="uploadQianchuanBtn" class="btn-primary" style="background-color: #10b981; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1; white-space: nowrap;">
+                            <span>📤 上传最新批次并计算</span>
+                        </button>
+                    </div>
+                    
+                    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span style="font-size: 13px; color: var(--secondary); display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                            历史批次 
+                            <span title="系统会自动将选中的批次与其所在当天的上一次批次进行对比。如果是当天的第一次上传，则不计算差值。" style="cursor: help; color: #3b82f6; font-size: 12px; border: 1px solid #3b82f6; border-radius: 50%; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;">?</span>
+                            ：
+                        </span>
+                        <select id="qianchuanBatchSelect" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 13px; min-width: 180px; max-width: 250px;">
+                            <option value="">最新批次</option>
+                        </select>
+                        <button id="deleteQianchuanBatchBtn" class="btn-primary" style="background-color: transparent; border: 1px solid var(--border); color: #ef4444; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1; display: none; white-space: nowrap;">
+                            <span>🗑️ 删除该批次</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div id="qianchuanTableContainer" style="overflow-x: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">

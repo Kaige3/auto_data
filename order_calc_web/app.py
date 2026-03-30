@@ -528,13 +528,32 @@ def upload_qianchuan():
 @app.route('/api/qianchuan_diff', methods=['GET'])
 def get_qianchuan_diff():
     search_kw = request.args.get('keyword', '')
+    target_batch = request.args.get('batch_id', None)
     try:
-        result = engine.get_material_diff(search_kw)
+        result = engine.get_material_diff(search_kw, target_batch)
         if not result:
             return jsonify({'status': 'success', 'data': [], 'latest_batch': None})
         return jsonify({'status': 'success', 'data': result['data'], 'latest_batch': result['latest_batch']})
     except Exception as e:
         app.logger.error(f"查询千川数据差异失败: {str(e)}")
+        return jsonify({'status': 'error', 'msg': str(e)})
+
+@app.route('/api/qianchuan_batches', methods=['GET'])
+def get_qianchuan_batches():
+    try:
+        batches = engine.get_qianchuan_batches()
+        return jsonify({'status': 'success', 'data': batches})
+    except Exception as e:
+        app.logger.error(f"获取千川批次列表失败: {str(e)}")
+        return jsonify({'status': 'error', 'msg': str(e)})
+
+@app.route('/api/qianchuan_batches/<batch_id>', methods=['DELETE'])
+def delete_qianchuan_batch(batch_id):
+    try:
+        engine.delete_qianchuan_batch(batch_id)
+        return jsonify({'status': 'success', 'msg': '删除成功'})
+    except Exception as e:
+        app.logger.error(f"删除千川批次失败: {str(e)}")
         return jsonify({'status': 'error', 'msg': str(e)})
 
 # -------------------------------

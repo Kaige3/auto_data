@@ -321,24 +321,39 @@ class DataEngine:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, records)
 
-    def get_material_diff(self, search_kw=None):
-        """查询千川素材最新批次与上一个批次的差异"""
+    def get_material_diff(self, search_kw=None, target_batch=None):
+        """查询千川素材指定批次（或最新批次）与当日上一个批次的差异"""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
-            # 1. 获取最新批次号
-            cursor = conn.execute("SELECT batch_id FROM material_reports ORDER BY upload_time DESC LIMIT 1")
-            row = cursor.fetchone()
-            if not row:
-                return []
-            latest_batch = row['batch_id']
+            
+            # 1. 确定要查询的目标批次和该批次的上传时间
+            if not target_batch:
+                cursor = conn.execute("SELECT batch_id, upload_time FROM material_reports ORDER BY upload_time DESC LIMIT 1")
+                row = cursor.fetchone()
+                if not row:
+                    return []
+                latest_batch = row['batch_id']
+                target_time = row['upload_time']
+            else:
+                latest_batch = target_batch
+                cursor = conn.execute("SELECT upload_time FROM material_reports WHERE batch_id = ? LIMIT 1", (latest_batch,))
+                row = cursor.fetchone()
+                if not row:
+                    return []
+                target_time = row['upload_time']
 
-            # 2. 查询最新批次数据，并通过窗口函数获取每个素材ID的上一次数据
+            # 获取该批次对应的日期前缀 (YYYY-MM-DD)
+            target_date = target_time[:10]
+
+            # 2. 查询目标批次数据，并通过窗口函数获取每个素材ID的当日上一次数据
+            # 增加条件：只在当日（DATE(upload_time) = target_date）的数据内进行排名对比
             query = """
                 WITH RankedData AS (
                     SELECT 
                         *,
                         ROW_NUMBER() OVER(PARTITION BY material_id ORDER BY upload_time DESC) as rn
                     FROM material_reports
+                    WHERE upload_time <= ? AND date(upload_time) = ?
                 ),
                 CurrentData AS (
                     SELECT * FROM RankedData WHERE rn = 1 AND batch_id = ?
@@ -370,7 +385,7 @@ class DataEngine:
                 LEFT JOIN PreviousData p ON c.material_id = p.material_id
                 WHERE 1=1
             """
-            params = [latest_batch]
+            params = [target_time, target_date, latest_batch]
             
             if search_kw:
                 query += " AND (c.material_name LIKE ? OR c.material_id LIKE ?)"
@@ -398,4 +413,22 @@ class DataEngine:
                     'diff_total_roi': round(r['diff_total_roi'] or 0, 2)
                 })
             return {'latest_batch': latest_batch, 'data': results}
+
+    def get_qianchuan_batches(self):
+        """获取所有千川上传批次列表"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute("""
+                SELECT batch_id, MAX(upload_time) as upload_time, COUNT(1) as record_count 
+                FROM material_reports 
+                GROUP BY batch_id 
+                ORDER BY upload_time DESC
+            """)
+            return [dict(r) for r in cursor.fetchall()]
+
+    def delete_qianchuan_batch(self, batch_id):
+        """删除指定的千川批次"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("DELETE FROM material_reports WHERE batch_id = ?", (batch_id,))
+            conn.commit()
 
