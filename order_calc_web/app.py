@@ -529,11 +529,17 @@ def upload_qianchuan():
 def get_qianchuan_diff():
     search_kw = request.args.get('keyword', '')
     target_batch = request.args.get('batch_id', None)
+    prev_batch = request.args.get('prev_batch_id', None)
     try:
-        result = engine.get_material_diff(search_kw, target_batch)
+        result = engine.get_material_diff(search_kw, target_batch, prev_batch)
         if not result:
-            return jsonify({'status': 'success', 'data': [], 'latest_batch': None})
-        return jsonify({'status': 'success', 'data': result['data'], 'latest_batch': result['latest_batch']})
+            return jsonify({'status': 'success', 'data': [], 'latest_batch': None, 'prev_batch': None})
+        return jsonify({
+            'status': 'success',
+            'data': result['data'],
+            'latest_batch': result['latest_batch'],
+            'prev_batch': result.get('prev_batch')
+        })
     except Exception as e:
         app.logger.error(f"查询千川数据差异失败: {str(e)}")
         return jsonify({'status': 'error', 'msg': str(e)})

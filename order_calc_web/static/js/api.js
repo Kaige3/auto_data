@@ -37,13 +37,16 @@ export async function uploadQianchuanData(file) {
     return await response.json();
 }
 
-export async function fetchQianchuanDiff(keyword = '', batchId = '') {
+export async function fetchQianchuanDiff(keyword = '', batchId = '', prevBatchId = '') {
     const params = new URLSearchParams({ t: Date.now() });
     if (keyword) {
         params.append('keyword', keyword);
     }
     if (batchId) {
         params.append('batch_id', batchId);
+    }
+    if (prevBatchId) {
+        params.append('prev_batch_id', prevBatchId);
     }
     const response = await fetch(`/api/qianchuan_diff?${params.toString()}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);

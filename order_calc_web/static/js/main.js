@@ -309,7 +309,8 @@ function bindEvents() {
         try {
             const keyword = qianchuanSearchInput ? qianchuanSearchInput.value : '';
             const batchId = qianchuanBatchSelect ? qianchuanBatchSelect.value : '';
-            const res = await fetchQianchuanDiff(keyword, batchId);
+            const prevBatchId = qianchuanPrevBatchSelect ? qianchuanPrevBatchSelect.value : '';
+            const res = await fetchQianchuanDiff(keyword, batchId, prevBatchId);
             if (res.status === 'success') {
                 currentQianchuanData = res.data;
                 renderQianchuanTable(currentQianchuanData, res.latest_batch, res.prev_batch);
@@ -346,7 +347,7 @@ function bindEvents() {
     });
 
     const loadQianchuanBatches = async () => {
-        if (!qianchuanBatchSelect) return;
+        if (!qianchuanBatchSelect || !qianchuanPrevBatchSelect) return;
         try {
             const res = await fetchQianchuanBatches();
             if (res.status === 'success' && res.data && res.data.length > 0) {
@@ -370,14 +371,15 @@ function bindEvents() {
                 });
 
                 qianchuanBatchSelect.innerHTML = optionsHtml;
-                if (qianchuanPrevBatchSelect) {
-                    qianchuanPrevBatchSelect.innerHTML = `<option value="">(无前置对比基准)</option>` + optionsHtml;
-                }
+                qianchuanPrevBatchSelect.innerHTML = `<option value="">(无前置对比基准)</option>` + optionsHtml;
             } else {
                 qianchuanBatchSelect.innerHTML = '<option value="">暂无数据</option>';
-                if (qianchuanPrevBatchSelect) {
-                    qianchuanPrevBatchSelect.innerHTML = '<option value="">暂无数据</option>';
-                }
+                qianchuanPrevBatchSelect.innerHTML = '<option value="">暂无数据</option>';
+            }
+            
+            // 首次加载批次列表后，主动触发一次查询以初始化两边的数据和状态
+            if (qianchuanBatchSelect.value) {
+                loadQianchuanDiff();
             }
         } catch (e) {
             console.error("加载批次列表失败", e);
@@ -394,6 +396,10 @@ function bindEvents() {
 
     if (qianchuanBatchSelect) {
         qianchuanBatchSelect.addEventListener('change', loadQianchuanDiff);
+    }
+    
+    if (qianchuanPrevBatchSelect) {
+        qianchuanPrevBatchSelect.addEventListener('change', loadQianchuanDiff);
     }
 
     if (searchQianchuanBtn) {

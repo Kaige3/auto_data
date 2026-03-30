@@ -329,8 +329,8 @@ class DataEngine:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, records)
 
-    def get_material_diff(self, search_kw=None, target_batch=None):
-        """查询千川素材指定批次（或最新批次）与全局时间线上的前一个批次的差异"""
+    def get_material_diff(self, search_kw=None, target_batch=None, explicit_prev_batch=None):
+        """查询千川素材指定批次（或最新批次）与全局时间线上的前一个批次（或指定的旧批次）的差异"""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             
@@ -350,46 +350,82 @@ class DataEngine:
                     return []
                 target_time = row['upload_time']
 
-            # 2. 自动寻找上一次（无视日期限制，只看全局时间线上的前一次）
-            query = """
-                WITH RankedData AS (
+            # 2. 查询逻辑
+            if explicit_prev_batch:
+                # 如果明确指定了旧批次
+                query = """
+                    WITH CurrentData AS (
+                        SELECT * FROM material_reports WHERE batch_id = ?
+                    ),
+                    PreviousData AS (
+                        SELECT * FROM material_reports WHERE batch_id = ?
+                    )
                     SELECT 
-                        *,
-                        ROW_NUMBER() OVER(PARTITION BY material_id ORDER BY upload_time DESC) as rn
-                    FROM material_reports
-                    WHERE upload_time <= ?
-                ),
-                CurrentData AS (
-                    SELECT * FROM RankedData WHERE rn = 1 AND batch_id = ?
-                ),
-                PreviousData AS (
-                    SELECT * FROM RankedData WHERE rn = 2
-                )
-                SELECT 
-                    c.material_id,
-                    c.material_name,
-                    c.tags,
-                    c.upload_time,
-                    c.total_cost as current_total_cost,
-                    p.total_cost as prev_total_cost,
-                    CASE WHEN p.id IS NOT NULL THEN (c.total_cost - p.total_cost) ELSE 0 END as diff_total_cost,
-                    c.basic_cost as current_basic_cost,
-                    p.basic_cost as prev_basic_cost,
-                    CASE WHEN p.id IS NOT NULL THEN (c.basic_cost - p.basic_cost) ELSE 0 END as diff_basic_cost,
-                    c.additional_cost as current_additional_cost,
-                    p.additional_cost as prev_additional_cost,
-                    CASE WHEN p.id IS NOT NULL THEN (c.additional_cost - p.additional_cost) ELSE 0 END as diff_additional_cost,
-                    c.additional_roi as current_additional_roi,
-                    p.additional_roi as prev_additional_roi,
-                    CASE WHEN p.id IS NOT NULL THEN (c.additional_roi - p.additional_roi) ELSE 0 END as diff_additional_roi,
-                    c.total_roi as current_total_roi,
-                    p.total_roi as prev_total_roi,
-                    CASE WHEN p.id IS NOT NULL THEN (c.total_roi - p.total_roi) ELSE 0 END as diff_total_roi
-                FROM CurrentData c
-                LEFT JOIN PreviousData p ON c.material_id = p.material_id
-                WHERE 1=1
-            """
-            params = [target_time, latest_batch]
+                        c.material_id,
+                        c.material_name,
+                        c.tags,
+                        c.upload_time,
+                        c.total_cost as current_total_cost,
+                        p.total_cost as prev_total_cost,
+                        CASE WHEN p.id IS NOT NULL THEN (c.total_cost - p.total_cost) ELSE 0 END as diff_total_cost,
+                        c.basic_cost as current_basic_cost,
+                        p.basic_cost as prev_basic_cost,
+                        CASE WHEN p.id IS NOT NULL THEN (c.basic_cost - p.basic_cost) ELSE 0 END as diff_basic_cost,
+                        c.additional_cost as current_additional_cost,
+                        p.additional_cost as prev_additional_cost,
+                        CASE WHEN p.id IS NOT NULL THEN (c.additional_cost - p.additional_cost) ELSE 0 END as diff_additional_cost,
+                        c.additional_roi as current_additional_roi,
+                        p.additional_roi as prev_additional_roi,
+                        CASE WHEN p.id IS NOT NULL THEN (c.additional_roi - p.additional_roi) ELSE 0 END as diff_additional_roi,
+                        c.total_roi as current_total_roi,
+                        p.total_roi as prev_total_roi,
+                        CASE WHEN p.id IS NOT NULL THEN (c.total_roi - p.total_roi) ELSE 0 END as diff_total_roi
+                    FROM CurrentData c
+                    LEFT JOIN PreviousData p ON c.material_id = p.material_id
+                    WHERE 1=1
+                """
+                params = [latest_batch, explicit_prev_batch]
+            else:
+                # 否则自动寻找上一次（无视日期限制，只看全局时间线上的前一次）
+                query = """
+                    WITH RankedData AS (
+                        SELECT 
+                            *,
+                            ROW_NUMBER() OVER(PARTITION BY material_id ORDER BY upload_time DESC) as rn
+                        FROM material_reports
+                        WHERE upload_time <= ?
+                    ),
+                    CurrentData AS (
+                        SELECT * FROM RankedData WHERE rn = 1 AND batch_id = ?
+                    ),
+                    PreviousData AS (
+                        SELECT * FROM RankedData WHERE rn = 2
+                    )
+                    SELECT 
+                        c.material_id,
+                        c.material_name,
+                        c.tags,
+                        c.upload_time,
+                        c.total_cost as current_total_cost,
+                        p.total_cost as prev_total_cost,
+                        CASE WHEN p.id IS NOT NULL THEN (c.total_cost - p.total_cost) ELSE 0 END as diff_total_cost,
+                        c.basic_cost as current_basic_cost,
+                        p.basic_cost as prev_basic_cost,
+                        CASE WHEN p.id IS NOT NULL THEN (c.basic_cost - p.basic_cost) ELSE 0 END as diff_basic_cost,
+                        c.additional_cost as current_additional_cost,
+                        p.additional_cost as prev_additional_cost,
+                        CASE WHEN p.id IS NOT NULL THEN (c.additional_cost - p.additional_cost) ELSE 0 END as diff_additional_cost,
+                        c.additional_roi as current_additional_roi,
+                        p.additional_roi as prev_additional_roi,
+                        CASE WHEN p.id IS NOT NULL THEN (c.additional_roi - p.additional_roi) ELSE 0 END as diff_additional_roi,
+                        c.total_roi as current_total_roi,
+                        p.total_roi as prev_total_roi,
+                        CASE WHEN p.id IS NOT NULL THEN (c.total_roi - p.total_roi) ELSE 0 END as diff_total_roi
+                    FROM CurrentData c
+                    LEFT JOIN PreviousData p ON c.material_id = p.material_id
+                    WHERE 1=1
+                """
+                params = [target_time, latest_batch]
             
             if search_kw:
                 query += " AND (c.material_name LIKE ? OR c.material_id LIKE ?)"
@@ -417,7 +453,16 @@ class DataEngine:
                     'diff_total_roi': round(r['diff_total_roi'] or 0, 2)
                 })
 
-            return {'latest_batch': latest_batch, 'data': results}
+            # 如果是自动模式，尝试找出它实际对比的那个 prev_batch_id 告诉前端
+            actual_prev_batch = explicit_prev_batch
+            if not explicit_prev_batch and results:
+                # 简单查询一下刚刚选出的 prev_batch_id，这里为了简单直接查询最近的非本批次
+                c_prev = conn.execute("SELECT batch_id FROM material_reports WHERE upload_time < ? ORDER BY upload_time DESC LIMIT 1", (target_time,))
+                p_row = c_prev.fetchone()
+                if p_row:
+                    actual_prev_batch = p_row['batch_id']
+
+            return {'latest_batch': latest_batch, 'prev_batch': actual_prev_batch, 'data': results}
 
     def get_qianchuan_batches(self):
         """获取所有千川上传批次列表"""
