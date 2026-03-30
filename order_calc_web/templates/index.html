@@ -24,11 +24,12 @@
         <nav class="module-nav" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
             <div class="group-title">业务中心</div>
             <button class="nav-item active" data-target="order-analysis" style="text-align:left;">📦 订单退款分析</button>
+            <button class="nav-item" data-target="qianchuan-analysis" style="text-align:left;">📈 千川投流差额</button>
             <button class="nav-item" data-target="media-crawler" style="text-align:left;">🎥 素材采集中心</button>
             <button class="nav-item" data-target="data-dashboard" style="text-align:left;">📊 全局数据大盘</button>
         </nav>
 
-        <div class="control-group">
+        <div class="control-group" id="dataSourceControlGroup">
             <div class="group-title">1. 数据源设置</div>
             <div>
                 <label>选择平台</label>
@@ -106,6 +107,48 @@
                 <!-- Tables will be injected here -->
             </div>
         </div>
+        </section>
+
+        <section id="qianchuan-analysis" class="biz-module" style="display:none;">
+            <div style="padding:16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
+                    <h2 style="margin: 0; color: var(--text-main);">📈 千川投流差额计算</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="qianchuanSearchInput" placeholder="搜索素材名称或ID..." style="padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); width: 200px;">
+                        <button id="searchQianchuanBtn" class="btn-primary" style="background-color: #3b82f6; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
+                            <span>🔍 查询</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 16px; align-items: center;">
+                    <input type="file" id="qianchuanFileInput" accept=".csv, .xlsx, .xls" style="font-size: 13px; color: var(--secondary);">
+                    <button id="uploadQianchuanBtn" class="btn-primary" style="background-color: #10b981; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
+                        <span>📤 上传最新批次并计算</span>
+                    </button>
+                </div>
+
+                <div id="qianchuanTableContainer" style="overflow-x: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr>
+                                <th>素材ID</th>
+                                <th>素材名称</th>
+                                <th>标签</th>
+                                <th>整体消耗</th>
+                                <th>基础消耗</th>
+                                <th>追投调控消耗</th>
+                                <th>追投调控支付ROI</th>
+                                <th>整体支付ROI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="qianchuanTableBody">
+                            <!-- Data will be injected here -->
+                            <tr><td colspan="8" style="text-align:center; padding: 20px;">暂无数据，请上传最新批次或进行查询</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </section>
 
         <section id="media-crawler" class="biz-module" style="display:none;">

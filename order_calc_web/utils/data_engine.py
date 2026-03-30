@@ -88,6 +88,31 @@ class DataEngine:
                 ON daily_snapshots (order_date, shop_name, sku_code)
             """)
 
+            # 4. 千川素材报表 (支持动态流水查询)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS material_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    batch_id TEXT,        -- 每次上传的唯一批次号
+                    upload_time DATETIME, -- 上传入库时间，用于时间线对比
+                    material_name TEXT,   -- 素材名称
+                    material_id TEXT,     -- 素材ID (核心索引)
+                    material_eval TEXT,   -- 素材评估
+                    material_duration TEXT, -- 素材时长
+                    material_create_time TEXT, -- 素材创建时间
+                    material_source TEXT, -- 素材来源
+                    tags TEXT,            -- 标签
+                    total_cost REAL,      -- 整体消耗
+                    basic_cost REAL,      -- 基础消耗
+                    additional_cost REAL, -- 追投调控消耗
+                    additional_roi REAL,  -- 追投调控支付ROI
+                    total_roi REAL        -- 整体支付ROI
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_material_reports_id_time 
+                ON material_reports (material_id, upload_time DESC)
+            """)
+
     def process_and_sync(self, df, platform, shop_name, file_name, batch_id=None):
         """核心处理逻辑：清洗 -> 入库 -> 统计"""
         # 如果没有传入 batch_id，则生成一个基于时间戳的默认批次号
@@ -254,4 +279,121 @@ class DataEngine:
         GROUP BY order_date, sku_code
         """
         conn.execute(sql, (shop_name, batch_id, stat_date, batch_id))
+
+    def insert_material_report(self, df, batch_id):
+        """导入千川素材报表数据"""
+        upload_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        def safe_float(val):
+            if pd.isna(val) or val == '' or val is None:
+                return 0.0
+            # 移除千分位逗号后再转换
+            try:
+                return float(str(val).replace(',', ''))
+            except ValueError:
+                return 0.0
+
+        records = []
+        for _, row in df.iterrows():
+            records.append((
+                batch_id,
+                upload_time,
+                str(row.get('素材名称', '')),
+                str(row.get('素材ID', '')),
+                str(row.get('素材评估', '')),
+                str(row.get('素材时长', '')),
+                str(row.get('素材创建时间', '')),
+                str(row.get('素材来源', '')),
+                str(row.get('标签', '')),
+                safe_float(row.get('整体消耗', 0)),
+                safe_float(row.get('基础消耗', 0)),
+                safe_float(row.get('追投调控消耗', 0)),
+                safe_float(row.get('追投调控支付ROI', 0)),
+                safe_float(row.get('整体支付ROI', 0))
+            ))
+
+        with sqlite3.connect(self.db_path) as conn:
+            conn.executemany("""
+                INSERT INTO material_reports (
+                    batch_id, upload_time, material_name, material_id, material_eval,
+                    material_duration, material_create_time, material_source, tags,
+                    total_cost, basic_cost, additional_cost, additional_roi, total_roi
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, records)
+
+    def get_material_diff(self, search_kw=None):
+        """查询千川素材最新批次与上一个批次的差异"""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            # 1. 获取最新批次号
+            cursor = conn.execute("SELECT batch_id FROM material_reports ORDER BY upload_time DESC LIMIT 1")
+            row = cursor.fetchone()
+            if not row:
+                return []
+            latest_batch = row['batch_id']
+
+            # 2. 查询最新批次数据，并通过窗口函数获取每个素材ID的上一次数据
+            query = """
+                WITH RankedData AS (
+                    SELECT 
+                        *,
+                        ROW_NUMBER() OVER(PARTITION BY material_id ORDER BY upload_time DESC) as rn
+                    FROM material_reports
+                ),
+                CurrentData AS (
+                    SELECT * FROM RankedData WHERE rn = 1 AND batch_id = ?
+                ),
+                PreviousData AS (
+                    SELECT * FROM RankedData WHERE rn = 2
+                )
+                SELECT 
+                    c.material_id,
+                    c.material_name,
+                    c.tags,
+                    c.total_cost as current_total_cost,
+                    p.total_cost as prev_total_cost,
+                    (c.total_cost - COALESCE(p.total_cost, 0)) as diff_total_cost,
+                    c.basic_cost as current_basic_cost,
+                    p.basic_cost as prev_basic_cost,
+                    (c.basic_cost - COALESCE(p.basic_cost, 0)) as diff_basic_cost,
+                    c.additional_cost as current_additional_cost,
+                    p.additional_cost as prev_additional_cost,
+                    (c.additional_cost - COALESCE(p.additional_cost, 0)) as diff_additional_cost,
+                    c.additional_roi as current_additional_roi,
+                    p.additional_roi as prev_additional_roi,
+                    (c.additional_roi - COALESCE(p.additional_roi, 0)) as diff_additional_roi,
+                    c.total_roi as current_total_roi,
+                    p.total_roi as prev_total_roi,
+                    (c.total_roi - COALESCE(p.total_roi, 0)) as diff_total_roi
+                FROM CurrentData c
+                LEFT JOIN PreviousData p ON c.material_id = p.material_id
+                WHERE 1=1
+            """
+            params = [latest_batch]
+            
+            if search_kw:
+                query += " AND (c.material_name LIKE ? OR c.material_id LIKE ?)"
+                params.extend([f"%{search_kw}%", f"%{search_kw}%"])
+                
+            query += " ORDER BY c.total_cost DESC"
+            
+            cursor = conn.execute(query, params)
+            results = []
+            for r in cursor.fetchall():
+                results.append({
+                    'material_id': r['material_id'],
+                    'material_name': r['material_name'],
+                    'tags': r['tags'],
+                    'current_total_cost': round(r['current_total_cost'] or 0, 2),
+                    'diff_total_cost': round(r['diff_total_cost'] or 0, 2),
+                    'current_basic_cost': round(r['current_basic_cost'] or 0, 2),
+                    'diff_basic_cost': round(r['diff_basic_cost'] or 0, 2),
+                    'current_additional_cost': round(r['current_additional_cost'] or 0, 2),
+                    'diff_additional_cost': round(r['diff_additional_cost'] or 0, 2),
+                    'current_additional_roi': round(r['current_additional_roi'] or 0, 2),
+                    'diff_additional_roi': round(r['diff_additional_roi'] or 0, 2),
+                    'current_total_roi': round(r['current_total_roi'] or 0, 2),
+                    'diff_total_roi': round(r['diff_total_roi'] or 0, 2)
+                })
+            return results
 

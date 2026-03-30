@@ -474,6 +474,67 @@ def delete_batches():
         app.logger.error(f"删除批次时出错: {error_msg}\n{traceback.format_exc()}")
         return jsonify({'status': 'error', 'msg': error_msg})
 
+@app.route('/upload_qianchuan', methods=['POST'])
+def upload_qianchuan():
+    if 'file' not in request.files:
+        return jsonify({'status': 'error', 'msg': '没有上传文件'})
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'status': 'error', 'msg': '文件名为空'})
+
+    try:
+        # 读取完整文件
+        try:
+            if file.filename.endswith('.csv'):
+                try:
+                    df = pd.read_csv(file, encoding='utf-8-sig')
+                except UnicodeDecodeError:
+                    file.seek(0)
+                    try:
+                        df = pd.read_csv(file, encoding='gb18030')
+                    except UnicodeDecodeError:
+                        file.seek(0)
+                        df = pd.read_csv(file, encoding='latin1')
+            elif file.filename.endswith(('.xls', '.xlsx')):
+                df = pd.read_excel(file)
+            else:
+                return jsonify({'status': 'error', 'msg': '仅支持 csv 或 xlsx 格式'})
+        except Exception as e:
+            return jsonify({'status': 'error', 'msg': f'读取文件失败: {str(e)}'})
+
+        # 清洗表头
+        df.columns = [str(col).strip().replace('\t', '').replace('\n', '').replace('\r', '') for col in df.columns]
+        
+        # 校验关键列
+        required_columns = ['素材ID', '素材名称', '整体消耗', '基础消耗', '追投调控消耗', '追投调控支付ROI', '整体支付ROI']
+        missing_cols = [col for col in required_columns if col not in df.columns]
+        if missing_cols:
+            return jsonify({'status': 'error', 'msg': f'文件缺少必要的列: {", ".join(missing_cols)}'})
+
+        # 生成批次号并入库
+        batch_id = f"qc_{int(time.time())}"
+        engine.insert_material_report(df, batch_id)
+
+        return jsonify({
+            'status': 'success',
+            'msg': '千川数据上传成功',
+            'batch_id': batch_id
+        })
+    except Exception as e:
+        app.logger.error(f"千川数据上传失败: {str(e)}")
+        return jsonify({'status': 'error', 'msg': f'处理失败: {str(e)}'})
+
+@app.route('/api/qianchuan_diff', methods=['GET'])
+def get_qianchuan_diff():
+    search_kw = request.args.get('keyword', '')
+    try:
+        results = engine.get_material_diff(search_kw)
+        return jsonify({'status': 'success', 'data': results})
+    except Exception as e:
+        app.logger.error(f"查询千川数据差异失败: {str(e)}")
+        return jsonify({'status': 'error', 'msg': str(e)})
+
 # -------------------------------
 # 素材采集中心 (VAMS) 轻量接口
 # -------------------------------

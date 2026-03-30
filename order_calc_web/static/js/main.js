@@ -1,4 +1,4 @@
-import { uploadFileData, fetchGlobalData, fetchYesterdayData } from './api.js';
+import { uploadFileData, fetchGlobalData, fetchYesterdayData, uploadQianchuanData, fetchQianchuanDiff } from './api.js';
 import { toggleLoading, renderGlobalTable, renderYesterdayTable, renderCrawlerTable } from './ui.js';
 
 // 暂存供导出使用的全局数据 
@@ -47,9 +47,16 @@ function bindEvents() {
 
     const navButtons = document.querySelectorAll('.nav-item');
     const modules = document.querySelectorAll('.biz-module');
+    const dataSourceControlGroup = document.getElementById('dataSourceControlGroup');
+
     function activate(targetId) {
         modules.forEach(m => m.style.display = (m.id === targetId ? 'block' : 'none'));
         navButtons.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-target') === targetId));
+        
+        // 只有订单分析才需要显示数据源设置面板
+        if (dataSourceControlGroup) {
+            dataSourceControlGroup.style.display = (targetId === 'order-analysis') ? 'block' : 'none';
+        }
     }
     activate('order-analysis');
     navButtons.forEach(btn => {
@@ -179,6 +186,109 @@ function bindEvents() {
             } catch (err) {
                 console.error(err);
                 alert('删除请求发生错误');
+            } finally {
+                toggleLoading(false);
+            }
+        });
+    }
+
+    // --- 千川投流差额 ---
+    const uploadQianchuanBtn = document.getElementById('uploadQianchuanBtn');
+    const qianchuanFileInput = document.getElementById('qianchuanFileInput');
+    const searchQianchuanBtn = document.getElementById('searchQianchuanBtn');
+    const qianchuanSearchInput = document.getElementById('qianchuanSearchInput');
+    const qianchuanTableBody = document.getElementById('qianchuanTableBody');
+
+    const renderQianchuanTable = (data) => {
+        if (!data || data.length === 0) {
+            qianchuanTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">暂无数据</td></tr>';
+            return;
+        }
+
+        let html = '';
+        data.forEach(item => {
+            const formatValue = (val) => val !== null && val !== undefined ? Number(val).toFixed(2) : '0.00';
+            
+            // 计算消耗类差异指标 (大于0红，小于0绿)
+            const renderCostIndicator = (diff) => {
+                if (diff > 0) return `<span style="color: #ef4444; margin-left: 5px;">(↑ ${formatValue(diff)})</span>`;
+                if (diff < 0) return `<span style="color: #10b981; margin-left: 5px;">(↓ ${formatValue(Math.abs(diff))})</span>`;
+                return '';
+            };
+
+            // 计算ROI类差异指标 (大于0绿，小于0红)
+            const renderRoiIndicator = (diff) => {
+                if (diff > 0) return `<span style="color: #10b981; margin-left: 5px;">(↑ ${formatValue(diff)})</span>`;
+                if (diff < 0) return `<span style="color: #ef4444; margin-left: 5px;">(↓ ${formatValue(Math.abs(diff))})</span>`;
+                return '';
+            };
+
+            html += `
+                <tr>
+                    <td>${item.material_id}</td>
+                    <td>${item.material_name}</td>
+                    <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.tags}">${item.tags || '-'}</td>
+                    <td>${formatValue(item.current_total_cost)}${renderCostIndicator(item.diff_total_cost)}</td>
+                    <td>${formatValue(item.current_basic_cost)}${renderCostIndicator(item.diff_basic_cost)}</td>
+                    <td>${formatValue(item.current_additional_cost)}${renderCostIndicator(item.diff_additional_cost)}</td>
+                    <td>${formatValue(item.current_additional_roi)}${renderRoiIndicator(item.diff_additional_roi)}</td>
+                    <td>${formatValue(item.current_total_roi)}${renderRoiIndicator(item.diff_total_roi)}</td>
+                </tr>
+            `;
+        });
+        qianchuanTableBody.innerHTML = html;
+    };
+
+    const loadQianchuanDiff = async () => {
+        toggleLoading(true);
+        try {
+            const keyword = qianchuanSearchInput ? qianchuanSearchInput.value : '';
+            const res = await fetchQianchuanDiff(keyword);
+            if (res.status === 'success') {
+                renderQianchuanTable(res.data);
+            } else {
+                alert('查询失败: ' + res.msg);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('查询发生错误');
+        } finally {
+            toggleLoading(false);
+        }
+    };
+
+    if (searchQianchuanBtn) {
+        searchQianchuanBtn.addEventListener('click', loadQianchuanDiff);
+    }
+    
+    if (qianchuanSearchInput) {
+        qianchuanSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadQianchuanDiff();
+            }
+        });
+    }
+
+    if (uploadQianchuanBtn) {
+        uploadQianchuanBtn.addEventListener('click', async () => {
+            if (!qianchuanFileInput.files || qianchuanFileInput.files.length === 0) {
+                alert('请先选择文件！');
+                return;
+            }
+            
+            toggleLoading(true);
+            try {
+                const res = await uploadQianchuanData(qianchuanFileInput.files[0]);
+                if (res.status === 'success') {
+                    alert('千川数据上传成功');
+                    qianchuanFileInput.value = ''; // 清空文件选择
+                    await loadQianchuanDiff(); // 刷新表格
+                } else {
+                    alert('上传失败: ' + res.msg);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('上传发生错误');
             } finally {
                 toggleLoading(false);
             }

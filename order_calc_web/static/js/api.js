@@ -28,3 +28,21 @@ export async function fetchYesterdayData(dateStr) {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return await response.json();
 }
+
+export async function uploadQianchuanData(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch('/upload_qianchuan', { method: 'POST', body: formData });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+}
+
+export async function fetchQianchuanDiff(keyword = '') {
+    const params = new URLSearchParams({ t: Date.now() });
+    if (keyword) {
+        params.append('keyword', keyword);
+    }
+    const response = await fetch(`/api/qianchuan_diff?${params.toString()}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+}
