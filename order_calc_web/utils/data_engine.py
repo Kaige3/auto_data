@@ -350,21 +350,22 @@ class DataEngine:
                     c.material_id,
                     c.material_name,
                     c.tags,
+                    c.upload_time,
                     c.total_cost as current_total_cost,
                     p.total_cost as prev_total_cost,
-                    (c.total_cost - COALESCE(p.total_cost, 0)) as diff_total_cost,
+                    CASE WHEN p.id IS NOT NULL THEN (c.total_cost - p.total_cost) ELSE 0 END as diff_total_cost,
                     c.basic_cost as current_basic_cost,
                     p.basic_cost as prev_basic_cost,
-                    (c.basic_cost - COALESCE(p.basic_cost, 0)) as diff_basic_cost,
+                    CASE WHEN p.id IS NOT NULL THEN (c.basic_cost - p.basic_cost) ELSE 0 END as diff_basic_cost,
                     c.additional_cost as current_additional_cost,
                     p.additional_cost as prev_additional_cost,
-                    (c.additional_cost - COALESCE(p.additional_cost, 0)) as diff_additional_cost,
+                    CASE WHEN p.id IS NOT NULL THEN (c.additional_cost - p.additional_cost) ELSE 0 END as diff_additional_cost,
                     c.additional_roi as current_additional_roi,
                     p.additional_roi as prev_additional_roi,
-                    (c.additional_roi - COALESCE(p.additional_roi, 0)) as diff_additional_roi,
+                    CASE WHEN p.id IS NOT NULL THEN (c.additional_roi - p.additional_roi) ELSE 0 END as diff_additional_roi,
                     c.total_roi as current_total_roi,
                     p.total_roi as prev_total_roi,
-                    (c.total_roi - COALESCE(p.total_roi, 0)) as diff_total_roi
+                    CASE WHEN p.id IS NOT NULL THEN (c.total_roi - p.total_roi) ELSE 0 END as diff_total_roi
                 FROM CurrentData c
                 LEFT JOIN PreviousData p ON c.material_id = p.material_id
                 WHERE 1=1
@@ -384,6 +385,7 @@ class DataEngine:
                     'material_id': r['material_id'],
                     'material_name': r['material_name'],
                     'tags': r['tags'],
+                    'upload_time': r['upload_time'],
                     'current_total_cost': round(r['current_total_cost'] or 0, 2),
                     'diff_total_cost': round(r['diff_total_cost'] or 0, 2),
                     'current_basic_cost': round(r['current_basic_cost'] or 0, 2),
@@ -395,5 +397,5 @@ class DataEngine:
                     'current_total_roi': round(r['current_total_roi'] or 0, 2),
                     'diff_total_roi': round(r['diff_total_roi'] or 0, 2)
                 })
-            return results
+            return {'latest_batch': latest_batch, 'data': results}
 

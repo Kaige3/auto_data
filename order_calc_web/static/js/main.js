@@ -198,11 +198,24 @@ function bindEvents() {
     const searchQianchuanBtn = document.getElementById('searchQianchuanBtn');
     const qianchuanSearchInput = document.getElementById('qianchuanSearchInput');
     const qianchuanTableBody = document.getElementById('qianchuanTableBody');
+    const qianchuanBatchInfo = document.getElementById('qianchuanBatchInfo');
 
-    const renderQianchuanTable = (data) => {
+    const renderQianchuanTable = (data, latestBatch) => {
         if (!data || data.length === 0) {
             qianchuanTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px;">暂无数据</td></tr>';
+            if (qianchuanBatchInfo) qianchuanBatchInfo.textContent = '';
             return;
+        }
+
+        if (qianchuanBatchInfo && latestBatch) {
+            // 解析时间戳 (格式为 qc_1711234567)
+            const tsMatch = latestBatch.match(/qc_(\d+)/);
+            if (tsMatch) {
+                const date = new Date(parseInt(tsMatch[1]) * 1000);
+                qianchuanBatchInfo.textContent = `当前展示批次: ${date.toLocaleString()}`;
+            } else {
+                qianchuanBatchInfo.textContent = `当前展示批次: ${latestBatch}`;
+            }
         }
 
         let html = '';
@@ -211,28 +224,53 @@ function bindEvents() {
             
             // 计算消耗类差异指标 (大于0红，小于0绿)
             const renderCostIndicator = (diff) => {
-                if (diff > 0) return `<span style="color: #ef4444; margin-left: 5px;">(↑ ${formatValue(diff)})</span>`;
-                if (diff < 0) return `<span style="color: #10b981; margin-left: 5px;">(↓ ${formatValue(Math.abs(diff))})</span>`;
-                return '';
+                if (diff > 0) return `<span style="color: #ef4444;">↑ ${formatValue(diff)}</span>`;
+                if (diff < 0) return `<span style="color: #10b981;">↓ ${formatValue(Math.abs(diff))}</span>`;
+                return '<span style="color: transparent;">-</span>'; // 占位保持高度一致
             };
 
             // 计算ROI类差异指标 (大于0绿，小于0红)
             const renderRoiIndicator = (diff) => {
-                if (diff > 0) return `<span style="color: #10b981; margin-left: 5px;">(↑ ${formatValue(diff)})</span>`;
-                if (diff < 0) return `<span style="color: #ef4444; margin-left: 5px;">(↓ ${formatValue(Math.abs(diff))})</span>`;
-                return '';
+                if (diff > 0) return `<span style="color: #10b981;">↑ ${formatValue(diff)}</span>`;
+                if (diff < 0) return `<span style="color: #ef4444;">↓ ${formatValue(Math.abs(diff))}</span>`;
+                return '<span style="color: transparent;">-</span>'; // 占位保持高度一致
             };
 
             html += `
-                <tr>
-                    <td>${item.material_id}</td>
-                    <td>${item.material_name}</td>
-                    <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.tags}">${item.tags || '-'}</td>
-                    <td>${formatValue(item.current_total_cost)}${renderCostIndicator(item.diff_total_cost)}</td>
-                    <td>${formatValue(item.current_basic_cost)}${renderCostIndicator(item.diff_basic_cost)}</td>
-                    <td>${formatValue(item.current_additional_cost)}${renderCostIndicator(item.diff_additional_cost)}</td>
-                    <td>${formatValue(item.current_additional_roi)}${renderRoiIndicator(item.diff_additional_roi)}</td>
-                    <td>${formatValue(item.current_total_roi)}${renderRoiIndicator(item.diff_total_roi)}</td>
+                <tr style="border-bottom: 1px solid var(--border); transition: background-color 0.2s;">
+                    <td style="padding: 12px 8px; word-break: break-all; color: var(--secondary); font-family: monospace;">${item.material_id}</td>
+                    <td style="padding: 12px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.material_name}">${item.material_name}</td>
+                    <td style="padding: 12px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--secondary);" title="${item.tags}">${item.tags || '-'}</td>
+                    <td style="padding: 12px 8px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span>${formatValue(item.current_total_cost)}</span>
+                            <span style="font-size: 12px;">${renderCostIndicator(item.diff_total_cost)}</span>
+                        </div>
+                    </td>
+                    <td style="padding: 12px 8px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span>${formatValue(item.current_basic_cost)}</span>
+                            <span style="font-size: 12px;">${renderCostIndicator(item.diff_basic_cost)}</span>
+                        </div>
+                    </td>
+                    <td style="padding: 12px 8px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span>${formatValue(item.current_additional_cost)}</span>
+                            <span style="font-size: 12px;">${renderCostIndicator(item.diff_additional_cost)}</span>
+                        </div>
+                    </td>
+                    <td style="padding: 12px 8px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span style="font-weight: 500;">${formatValue(item.current_additional_roi)}</span>
+                            <span style="font-size: 12px;">${renderRoiIndicator(item.diff_additional_roi)}</span>
+                        </div>
+                    </td>
+                    <td style="padding: 12px 8px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span style="font-weight: 500;">${formatValue(item.current_total_roi)}</span>
+                            <span style="font-size: 12px;">${renderRoiIndicator(item.diff_total_roi)}</span>
+                        </div>
+                    </td>
                 </tr>
             `;
         });
@@ -245,7 +283,7 @@ function bindEvents() {
             const keyword = qianchuanSearchInput ? qianchuanSearchInput.value : '';
             const res = await fetchQianchuanDiff(keyword);
             if (res.status === 'success') {
-                renderQianchuanTable(res.data);
+                renderQianchuanTable(res.data, res.latest_batch);
             } else {
                 alert('查询失败: ' + res.msg);
             }

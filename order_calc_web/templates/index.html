@@ -126,25 +126,36 @@
                     <button id="uploadQianchuanBtn" class="btn-primary" style="background-color: #10b981; width: auto; padding: 4px 12px; font-size: 13px; height: 32px; border-radius: 4px; line-height: 1;">
                         <span>📤 上传最新批次并计算</span>
                     </button>
+                    <span id="qianchuanBatchInfo" style="margin-left: auto; font-size: 13px; color: var(--secondary); font-weight: 500;"></span>
                 </div>
 
                 <div id="qianchuanTableContainer" style="overflow-x: auto; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
-                    <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed;">
+                        <colgroup>
+                            <col style="width: 15%;"> <!-- 素材ID -->
+                            <col style="width: 25%;"> <!-- 素材名称 -->
+                            <col style="width: 15%;"> <!-- 标签 -->
+                            <col style="width: 9%;">  <!-- 整体消耗 -->
+                            <col style="width: 9%;">  <!-- 基础消耗 -->
+                            <col style="width: 9%;">  <!-- 追投调控消耗 -->
+                            <col style="width: 9%;">  <!-- 追投调控支付ROI -->
+                            <col style="width: 9%;">  <!-- 整体支付ROI -->
+                        </colgroup>
                         <thead>
-                            <tr>
-                                <th>素材ID</th>
-                                <th>素材名称</th>
-                                <th>标签</th>
-                                <th>整体消耗</th>
-                                <th>基础消耗</th>
-                                <th>追投调控消耗</th>
-                                <th>追投调控支付ROI</th>
-                                <th>整体支付ROI</th>
+                            <tr style="background-color: var(--bg-main);">
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">素材ID</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">素材名称</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">标签</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">整体消耗</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">基础消耗</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">追投调控消耗</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">追投ROI</th>
+                                <th style="padding: 12px 8px; border-bottom: 1px solid var(--border); font-weight: 600;">整体ROI</th>
                             </tr>
                         </thead>
                         <tbody id="qianchuanTableBody">
                             <!-- Data will be injected here -->
-                            <tr><td colspan="8" style="text-align:center; padding: 20px;">暂无数据，请上传最新批次或进行查询</td></tr>
+                            <tr><td colspan="8" style="text-align:center; padding: 20px; color: var(--secondary);">暂无数据，请上传最新批次或进行查询</td></tr>
                         </tbody>
                     </table>
                 </div>
