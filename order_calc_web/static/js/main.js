@@ -201,6 +201,10 @@ function bindEvents() {
     const qianchuanBatchSelect = document.getElementById('qianchuanBatchSelect');
     const deleteQianchuanBatchBtn = document.getElementById('deleteQianchuanBatchBtn');
 
+    let currentQianchuanData = [];
+    let currentSortColumn = 'current_total_cost'; // 默认按整体消耗排序
+    let currentSortOrder = 'desc'; // 默认降序
+
     const renderQianchuanTable = (data, latestBatch) => {
         if (!data || data.length === 0) {
             qianchuanTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 20px; color: var(--secondary);">暂无数据</td></tr>';
@@ -212,6 +216,29 @@ function bindEvents() {
             qianchuanBatchSelect.value = latestBatch;
             if (deleteQianchuanBatchBtn) deleteQianchuanBatchBtn.style.display = 'block';
         }
+
+        // 排序逻辑
+        data.sort((a, b) => {
+            const valA = a[currentSortColumn] || 0;
+            const valB = b[currentSortColumn] || 0;
+            if (currentSortOrder === 'asc') {
+                return valA - valB;
+            } else {
+                return valB - valA;
+            }
+        });
+
+        // 更新表头排序图标
+        document.querySelectorAll('.sortable-col').forEach(th => {
+            const iconSpan = th.querySelector('.sort-icon');
+            if (th.getAttribute('data-sort') === currentSortColumn) {
+                iconSpan.innerHTML = currentSortOrder === 'asc' ? '▲' : '▼';
+                iconSpan.style.color = 'var(--text-main)';
+            } else {
+                iconSpan.innerHTML = '↕';
+                iconSpan.style.color = 'var(--secondary)';
+            }
+        });
 
         let html = '';
         data.forEach(item => {
@@ -279,7 +306,8 @@ function bindEvents() {
             const batchId = qianchuanBatchSelect ? qianchuanBatchSelect.value : '';
             const res = await fetchQianchuanDiff(keyword, batchId);
             if (res.status === 'success') {
-                renderQianchuanTable(res.data, res.latest_batch);
+                currentQianchuanData = res.data;
+                renderQianchuanTable(currentQianchuanData, res.latest_batch);
             } else {
                 alert('查询失败: ' + res.msg);
             }
@@ -290,6 +318,26 @@ function bindEvents() {
             toggleLoading(false);
         }
     };
+
+    // 绑定表头排序点击事件
+    document.querySelectorAll('.sortable-col').forEach(th => {
+        th.addEventListener('click', () => {
+            const sortKey = th.getAttribute('data-sort');
+            if (currentSortColumn === sortKey) {
+                // 如果已经是按该列排序，则切换顺序
+                currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+            } else {
+                // 如果是新列，默认降序
+                currentSortColumn = sortKey;
+                currentSortOrder = 'desc';
+            }
+            if (currentQianchuanData && currentQianchuanData.length > 0) {
+                // 仅重新渲染表格（不用重新请求数据）
+                const batchId = qianchuanBatchSelect ? qianchuanBatchSelect.value : '';
+                renderQianchuanTable(currentQianchuanData, batchId);
+            }
+        });
+    });
 
     const loadQianchuanBatches = async () => {
         if (!qianchuanBatchSelect) return;
